@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>FPS Arcade</title>
+<style>
+body { margin:0; overflow:hidden; background:black; }
+canvas { display:block; }
+#hud {
+  position:absolute;
+  top:10px;
+  left:10px;
+  color:white;
+  font-family:Arial;
+}
+</style>
+</head>
+<body>
+
+<div id="hud">Vite: 100 | Punti: 0</div>
+<canvas id="game"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let player = {x: canvas.width/2, y: canvas.height/2, hp:100};
+let enemies = [];
+let bullets = [];
+let score = 0;
+
+// spawn nemici
+function spawnEnemy() {
+  enemies.push({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    size: 20,
+    speed: 1 + Math.random()*2
+  });
+}
+setInterval(spawnEnemy, 1000);
+
+// sparo
+window.addEventListener("click", e=>{
+  bullets.push({
+    x: player.x,
+    y: player.y,
+    dx: (e.clientX - player.x)/10,
+    dy: (e.clientY - player.y)/10
+  });
+});
+
+// loop
+function gameLoop() {
+  ctx.fillStyle = "#1a2a1a"; // sfondo tipo bosco
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // player (mirino)
+  ctx.fillStyle = "white";
+  ctx.fillRect(player.x-5, player.y-5, 10,10);
+
+  // bullets
+  bullets.forEach((b,i)=>{
+    b.x += b.dx;
+    b.y += b.dy;
+    ctx.fillStyle="yellow";
+    ctx.fillRect(b.x,b.y,5,5);
+  });
+
+  // enemies
+  enemies.forEach((en,ei)=>{
+    let dx = player.x - en.x;
+    let dy = player.y - en.y;
+    let dist = Math.sqrt(dx*dx+dy*dy);
+
+    en.x += dx/dist * en.speed;
+    en.y += dy/dist * en.speed;
+
+    ctx.fillStyle="red";
+    ctx.fillRect(en.x,en.y,en.size,en.size);
+
+    // danno
+    if(dist < 20){
+      player.hp -= 1;
+    }
+
+    // collisione bullet
+    bullets.forEach((b,bi)=>{
+      if(b.x < en.x+en.size && b.x > en.x &&
+         b.y < en.y+en.size && b.y > en.y){
+        enemies.splice(ei,1);
+        bullets.splice(bi,1);
+        score++;
+      }
+    });
+  });
+
+  document.getElementById("hud").innerText =
+    "Vite: " + player.hp + " | Punti: " + score;
+
+  if(player.hp <= 0){
+    alert("GAME OVER - Punti: " + score);
+    location.reload();
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
